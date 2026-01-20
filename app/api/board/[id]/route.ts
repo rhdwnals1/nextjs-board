@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 
-import prisma from "@/lib/prisma";
+import { eq } from "drizzle-orm";
+
+import { posts } from "@/drizzle/schema";
+import { db } from "@/lib/db";
 
 export const runtime = "nodejs";
 
@@ -30,9 +33,9 @@ export async function GET(_request: Request, context: RouteContext) {
     );
   }
 
-  const post = await prisma.post.findUnique({
-    where: { id: postId },
-  });
+  const post = (
+    await db.select().from(posts).where(eq(posts.id, postId)).limit(1)
+  )[0];
 
   if (!post) {
     return NextResponse.json(
@@ -78,18 +81,20 @@ export async function PUT(request: Request, context: RouteContext) {
     );
   }
 
-  try {
-    const updated = await prisma.post.update({
-      where: { id: postId },
-      data: { title, content },
-    });
-    return NextResponse.json(updated);
-  } catch {
+  const updated = await db
+    .update(posts)
+    .set({ title, content })
+    .where(eq(posts.id, postId))
+    .returning();
+
+  if (updated.length === 0) {
     return NextResponse.json(
       { error: "게시글을 찾을 수 없습니다." },
       { status: 404 }
     );
   }
+
+  return NextResponse.json(updated[0]);
 }
 
 export async function DELETE(_request: Request, context: RouteContext) {
@@ -102,15 +107,17 @@ export async function DELETE(_request: Request, context: RouteContext) {
     );
   }
 
-  try {
-    await prisma.post.delete({
-      where: { id: postId },
-    });
-    return NextResponse.json({ ok: true });
-  } catch {
+  const deleted = await db
+    .delete(posts)
+    .where(eq(posts.id, postId))
+    .returning({ id: posts.id });
+
+  if (deleted.length === 0) {
     return NextResponse.json(
       { error: "게시글을 찾을 수 없습니다." },
       { status: 404 }
     );
   }
+
+  return NextResponse.json({ ok: true });
 }

@@ -1,20 +1,20 @@
 ## next-board
 
-Next.js(App Router) + Prisma(SQLite)로 만든 **간단한 게시판 CRUD 프로젝트**입니다.
+Next.js(App Router) + Drizzle(PostgreSQL)로 만든 **간단한 게시판 CRUD 프로젝트**입니다.
 
 ### 주요 기능
 
-- **게시글 목록**: `/posts`
-- **게시글 상세**: `/posts/[id]`
-- **게시글 작성**: `/posts/new`
-- **게시글 수정**: `/posts/[id]/edit`
+- **게시글 목록**: `/board`
+- **게시글 상세**: `/board/[id]`
+- **게시글 작성**: `/board/new`
+- **게시글 수정**: `/board/[id]/edit`
 - **게시글 삭제**: 상세 화면에서 삭제 버튼
 
 ### 기술 스택
 
 - **Next.js (App Router)**
 - **React**
-- **Prisma + SQLite** (`dev.db`)
+- **Drizzle ORM + PostgreSQL**
 - **Tailwind CSS**
 - **shadcn 스타일 UI 컴포넌트**: `components/ui/*` (Button/Card/Input/Textarea)
 
@@ -38,23 +38,36 @@ npm run dev
 
 ---
 
-### DB / Prisma
+### DB / Drizzle
 
-이 프로젝트는 기본적으로 SQLite 파일 DB(`dev.db`)를 사용합니다.
+이 프로젝트는 **PostgreSQL**을 사용합니다.
 
-- **Schema**: `prisma/schema.prisma`
-- **Migrations**: `prisma/migrations/*`
-- **Prisma Client/Adapter 설정**: `lib/prisma.ts`
+- **Schema**: `drizzle/schema.ts`
+- **DB 연결 설정**: `lib/db.ts`
 
 #### DATABASE_URL
 
-기본값은 `file:./dev.db`이며(`lib/prisma.ts`), 필요하면 `.env`에서 다음처럼 바꿀 수 있습니다.
+`.env`에 다음처럼 PostgreSQL 연결 문자열을 넣어주세요. (예시는 `env.example` 참고)
 
 ```bash
-DATABASE_URL="file:./dev.db"
+DATABASE_URL="postgres://USER:PASSWORD@HOST:5432/DB"
 ```
 
-> `dev.db`는 로컬 데이터라서 `.gitignore`에 포함되어 커밋되지 않습니다.
+> 로컬 개발에서는 보통 `HOST=localhost`로 두고, DB는 별도로 생성해서 사용합니다.
+
+#### 로컬 PostgreSQL 빠른 실행(docker-compose)
+
+Docker를 쓴다면 아래처럼 바로 띄울 수 있습니다. (최초 실행 시 `posts` 테이블도 자동 생성)
+
+```bash
+docker compose up -d
+```
+
+그리고 `.env`를 만들고 다음 값을 넣어주세요:
+
+```bash
+DATABASE_URL="postgres://postgres:postgres@localhost:5432/next_board"
+```
 
 ---
 
@@ -62,24 +75,25 @@ DATABASE_URL="file:./dev.db"
 
 - **홈**: `app/page.tsx`
 - **목록**: `app/posts/page.tsx`
-- **작성**: `app/posts/new/page.tsx`
-- **상세**: `app/posts/[id]/page.tsx`
-- **수정**: `app/posts/[id]/edit/page.tsx`
+- **목록**: `app/board/page.tsx`
+- **작성**: `app/board/new/page.tsx`
+- **상세**: `app/board/[id]/page.tsx`
+- **수정**: `app/board/[id]/edit/page.tsx`
 
 ---
 
 ### 라우트(API)
 
-#### `/api/posts`
+#### `/api/board`
 
-- `GET /api/posts`: 게시글 전체 조회(최신순)
-- `POST /api/posts`: 게시글 생성
+- `GET /api/board`: 게시글 전체 조회(최신순)
+- `POST /api/board`: 게시글 생성
 
-#### `/api/posts/[id]`
+#### `/api/board/[id]`
 
-- `GET /api/posts/:id`: 게시글 단건 조회
-- `PUT /api/posts/:id`: 게시글 수정 (`{ title, content }`)
-- `DELETE /api/posts/:id`: 게시글 삭제
+- `GET /api/board/:id`: 게시글 단건 조회
+- `PUT /api/board/:id`: 게시글 수정 (`{ title, content }`)
+- `DELETE /api/board/:id`: 게시글 삭제
 
 ---
 
@@ -90,7 +104,7 @@ app/
   api/posts/
     route.ts
     [id]/route.ts
-  posts/
+  board/
     page.tsx
     new/page.tsx
     [id]/page.tsx
@@ -102,9 +116,8 @@ components/
     input.tsx
     textarea.tsx
 lib/
-  prisma.ts
+  db.ts
   utils.ts
-prisma/
-  schema.prisma
-  migrations/
+drizzle/
+  schema.ts
 ```

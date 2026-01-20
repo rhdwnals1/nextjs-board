@@ -14,12 +14,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-
-type Post = {
-  id: number;
-  title: string;
-  content: string;
-};
+import { getPost, updatePost } from "@/services/posts";
 
 export default function EditPostPage({
   params,
@@ -42,14 +37,11 @@ export default function EditPostPage({
 
     (async () => {
       try {
-        const res = await fetch(`/api/posts/${postId}`);
-        if (!res.ok) {
-          router.replace("/posts");
-          return;
-        }
-        const data = (await res.json()) as Post;
+        const data = await getPost(postId);
         setTitle(data.title ?? "");
         setContent(data.content ?? "");
+      } catch {
+        router.replace("/posts");
       } finally {
         setLoading(false);
       }
@@ -58,21 +50,14 @@ export default function EditPostPage({
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    const res = await fetch(`/api/posts/${postId}`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ title, content }),
-    });
-
-    if (!res.ok) {
-      const data = (await res.json().catch(() => null)) as {
-        error?: string;
-      } | null;
-      alert(data?.error ?? "수정에 실패했습니다.");
+    try {
+      await updatePost(postId, { title, content });
+    } catch (e) {
+      alert(e instanceof Error ? e.message : "수정에 실패했습니다.");
       return;
     }
 
-    router.push(`/posts/${postId}`);
+    router.push(`/board/${postId}`);
     router.refresh();
   };
 
@@ -81,13 +66,13 @@ export default function EditPostPage({
       <div className="mb-4 flex items-center justify-between gap-3">
         <Link
           className="text-sm text-zinc-600 hover:underline dark:text-zinc-300"
-          href={`/posts/${postId}`}
+          href={`/board/${postId}`}
         >
           ← 상세로
         </Link>
         <Link
           className="text-sm text-zinc-600 hover:underline dark:text-zinc-300"
-          href="/posts"
+          href="/board"
         >
           목록
         </Link>

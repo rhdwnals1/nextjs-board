@@ -16,13 +16,13 @@ export default function Home() {
         <div className="flex w-full flex-col items-center justify-center gap-4 text-lg font-semibold sm:flex-row">
           <Link
             className="flex h-14 w-full max-w-xs items-center justify-center rounded-full bg-foreground px-8 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc]"
-            href="/posts"
+            href="/board"
           >
             게시판 보기
           </Link>
           <Link
             className="flex h-14 w-full max-w-xs items-center justify-center rounded-full border border-solid border-black/10 px-8 transition-colors hover:border-transparent hover:bg-black/5 dark:border-white/[.145] dark:hover:bg-[#1a1a1a]"
-            href="/posts/new"
+            href="/board/new"
           >
             글 작성
           </Link>

@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 
-import prisma from "@/lib/prisma";
+import { desc } from "drizzle-orm";
+
+import { db } from "@/lib/db";
+import { posts } from "@/drizzle/schema";
 
 export const runtime = "nodejs";
 
@@ -9,10 +12,8 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 export async function GET() {
-  const posts = await prisma.post.findMany({
-    orderBy: { createdAt: "desc" },
-  });
-  return NextResponse.json(posts);
+  const rows = await db.select().from(posts).orderBy(desc(posts.createdAt));
+  return NextResponse.json(rows);
 }
 
 export async function POST(request: Request) {
@@ -40,8 +41,7 @@ export async function POST(request: Request) {
     );
   }
 
-  const newPost = await prisma.post.create({
-    data: { title, content },
-  });
-  return NextResponse.json(newPost, { status: 201 });
+  const created = await db.insert(posts).values({ title, content }).returning();
+
+  return NextResponse.json(created[0], { status: 201 });
 }

@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { createPost } from "@/services/posts";
 
 export default function NewPostPage() {
   const [title, setTitle] = useState("");
@@ -22,21 +23,14 @@ export default function NewPostPage() {
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    const res = await fetch("/api/posts", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ title, content }),
-    });
-
-    if (!res.ok) {
-      const data = (await res.json().catch(() => null)) as {
-        error?: string;
-      } | null;
-      alert(data?.error ?? "작성에 실패했습니다.");
+    try {
+      await createPost({ title, content });
+    } catch (e) {
+      alert(e instanceof Error ? e.message : "작성에 실패했습니다.");
       return;
     }
 
-    router.push("/posts");
+    router.push("/board");
     router.refresh();
   };
 
@@ -46,7 +40,7 @@ export default function NewPostPage() {
         <h1 className="text-xl font-semibold">글 작성</h1>
         <Link
           className="text-sm text-zinc-600 hover:underline dark:text-zinc-300"
-          href="/posts"
+          href="/board"
         >
           목록
         </Link>

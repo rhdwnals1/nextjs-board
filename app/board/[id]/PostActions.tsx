@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
+import { deletePost } from "@/services/posts";
 
 export function PostActions({ postId }: { postId: number }) {
   const router = useRouter();
@@ -11,13 +12,14 @@ export function PostActions({ postId }: { postId: number }) {
     const ok = window.confirm("정말 삭제할까요?");
     if (!ok) return;
 
-    const res = await fetch(`/api/posts/${postId}`, { method: "DELETE" });
-    if (!res.ok) {
-      alert("삭제에 실패했습니다.");
+    try {
+      await deletePost(postId);
+    } catch (e) {
+      alert(e instanceof Error ? e.message : "삭제에 실패했습니다.");
       return;
     }
 
-    router.push("/posts");
+    router.push("/board");
     router.refresh();
   };
 
@@ -25,7 +27,7 @@ export function PostActions({ postId }: { postId: number }) {
     <div className="flex gap-2">
       <Button
         variant="outline"
-        onClick={() => router.push(`/posts/${postId}/edit`)}
+        onClick={() => router.push(`/board/${postId}/edit`)}
       >
         수정
       </Button>

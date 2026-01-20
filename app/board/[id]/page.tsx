@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
-import prisma from "@/lib/prisma";
+import { eq } from "drizzle-orm";
+
 import {
   Card,
   CardContent,
@@ -10,6 +11,8 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { PostActions } from "./PostActions";
+import { db } from "@/lib/db";
+import { posts } from "@/drizzle/schema";
 
 type PageProps = {
   params: Promise<{ id: string }>;
@@ -23,9 +26,9 @@ export default async function PostDetailPage({ params }: PageProps) {
     notFound();
   }
 
-  const post = await prisma.post.findUnique({
-    where: { id: postId },
-  });
+  const post = (
+    await db.select().from(posts).where(eq(posts.id, postId)).limit(1)
+  )[0];
 
   if (!post) notFound();
 
@@ -34,7 +37,7 @@ export default async function PostDetailPage({ params }: PageProps) {
       <div className="flex items-center justify-between gap-3">
         <Link
           className="text-sm text-zinc-600 hover:underline dark:text-zinc-300"
-          href="/posts"
+          href="/board"
         >
           ← 목록
         </Link>
