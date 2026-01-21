@@ -11,6 +11,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { BoardActions } from "./BoardActions";
+import { CommentsSection } from "./CommentsSection";
 import { db } from "@/lib/db";
 import { posts } from "@drizzle/schema";
 
@@ -52,6 +53,8 @@ export default async function PostDetailPage({ params }: PageProps) {
           작성일: {new Date(post.createdAt).toLocaleString()}
         </CardFooter>
       </Card>
+
+      <CommentsSection postId={post.id} />
     </div>
   );
 }

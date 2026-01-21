@@ -1,29 +1,28 @@
 import { NextResponse } from "next/server";
 
 import { eq } from "drizzle-orm";
+import { z } from "zod";
 
 import { posts } from "@drizzle/schema";
 import { db } from "@/lib/db";
-import { boardUpsertSchema } from "@/lib/validators/board";
+import { isString } from "@/utils/common";
 
 export const runtime = "nodejs";
+
+const boardUpsertSchema = z.object({
+  title: z.string().trim().min(1, "title은 비어있을 수 없습니다."),
+  content: z.string().trim().min(1, "content는 비어있을 수 없습니다."),
+});
 
 type RouteContext = {
   params: Promise<{ id: string }>;
 };
 
-async function parsePostId(context: RouteContext) {
-  const { id } = await context.params;
-  const postId = Number(id);
-
-  if (!Number.isInteger(postId) || postId <= 0) return null;
-  return postId;
-}
-
 export async function GET(_request: Request, context: RouteContext) {
-  const postId = await parsePostId(context);
+  const rawId = (await context.params).id;
+  const postId = isString(rawId) ? Number(rawId) : NaN;
 
-  if (!postId) {
+  if (!Number.isInteger(postId) || postId <= 0) {
     return NextResponse.json(
       { error: "id는 양의 정수여야 합니다." },
       { status: 400 }
@@ -45,9 +44,10 @@ export async function GET(_request: Request, context: RouteContext) {
 }
 
 export async function PUT(request: Request, context: RouteContext) {
-  const postId = await parsePostId(context);
+  const rawId = (await context.params).id;
+  const postId = isString(rawId) ? Number(rawId) : NaN;
 
-  if (!postId) {
+  if (!Number.isInteger(postId) || postId <= 0) {
     return NextResponse.json(
       { error: "id는 양의 정수여야 합니다." },
       { status: 400 }
@@ -84,9 +84,10 @@ export async function PUT(request: Request, context: RouteContext) {
 }
 
 export async function DELETE(_request: Request, context: RouteContext) {
-  const postId = await parsePostId(context);
+  const rawId = (await context.params).id;
+  const postId = isString(rawId) ? Number(rawId) : NaN;
 
-  if (!postId) {
+  if (!Number.isInteger(postId) || postId <= 0) {
     return NextResponse.json(
       { error: "id는 양의 정수여야 합니다." },
       { status: 400 }
