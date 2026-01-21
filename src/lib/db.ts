@@ -1,7 +1,7 @@
 import postgres from "postgres";
 import { drizzle } from "drizzle-orm/postgres-js";
 
-import * as schema from "@/drizzle/schema";
+import * as schema from "@drizzle/schema";
 
 const databaseUrl = process.env.DATABASE_URL;
 
@@ -30,4 +30,3 @@ if (process.env.NODE_ENV !== "production") {
   globalForDb.sql = sql;
   globalForDb.drizzleDb = db;
 }
-

@@ -10,9 +10,9 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { PostActions } from "./PostActions";
+import { BoardActions } from "./BoardActions";
 import { db } from "@/lib/db";
-import { posts } from "@/drizzle/schema";
+import { posts } from "@drizzle/schema";
 
 type PageProps = {
   params: Promise<{ id: string }>;
@@ -33,15 +33,12 @@ export default async function PostDetailPage({ params }: PageProps) {
   if (!post) notFound();
 
   return (
-    <div className="mx-auto w-full max-w-2xl p-6 space-y-4">
-      <div className="flex items-center justify-between gap-3">
-        <Link
-          className="text-sm text-zinc-600 hover:underline dark:text-zinc-300"
-          href="/board"
-        >
+    <div className={styles.container}>
+      <div className={styles.headerRow}>
+        <Link className={styles.backLink} href="/board">
           ← 목록
         </Link>
-        <PostActions postId={post.id} />
+        <BoardActions postId={post.id} />
       </div>
 
       <Card>
@@ -49,14 +46,20 @@ export default async function PostDetailPage({ params }: PageProps) {
           <CardTitle>{post.title}</CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="whitespace-pre-wrap leading-7 text-zinc-800 dark:text-zinc-200">
-            {post.content}
-          </p>
+          <p className={styles.content}>{post.content}</p>
         </CardContent>
-        <CardFooter className="justify-end text-xs text-zinc-500 dark:text-zinc-400">
+        <CardFooter className={styles.footer}>
           작성일: {new Date(post.createdAt).toLocaleString()}
         </CardFooter>
       </Card>
     </div>
   );
 }
+
+const styles = {
+  container: "mx-auto w-full max-w-2xl p-6 space-y-4",
+  headerRow: "flex items-center justify-between gap-3",
+  backLink: "text-sm text-zinc-600 hover:underline dark:text-zinc-300",
+  content: "whitespace-pre-wrap leading-7 text-zinc-800 dark:text-zinc-200",
+  footer: "justify-end text-xs text-zinc-500 dark:text-zinc-400",
+};

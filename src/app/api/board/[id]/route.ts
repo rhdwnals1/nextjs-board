@@ -2,18 +2,15 @@ import { NextResponse } from "next/server";
 
 import { eq } from "drizzle-orm";
 
-import { posts } from "@/drizzle/schema";
+import { posts } from "@drizzle/schema";
 import { db } from "@/lib/db";
+import { boardUpsertSchema } from "@/lib/validators/board";
 
 export const runtime = "nodejs";
 
 type RouteContext = {
   params: Promise<{ id: string }>;
 };
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null;
-}
 
 async function parsePostId(context: RouteContext) {
   const { id } = await context.params;
@@ -57,29 +54,18 @@ export async function PUT(request: Request, context: RouteContext) {
     );
   }
 
-  const data = (await request.json().catch(() => null)) as unknown;
-
-  if (
-    !data ||
-    !isRecord(data) ||
-    typeof data.title !== "string" ||
-    typeof data.content !== "string"
-  ) {
+  const raw = (await request.json().catch(() => null)) as unknown;
+  const parsed = boardUpsertSchema.safeParse(raw);
+  if (!parsed.success) {
     return NextResponse.json(
-      { error: "title, content 문자열이 필요합니다." },
+      {
+        error:
+          parsed.error.issues[0]?.message ?? "요청 값이 올바르지 않습니다.",
+      },
       { status: 400 }
     );
   }
-
-  const title = data.title.trim();
-  const content = data.content.trim();
-
-  if (!title || !content) {
-    return NextResponse.json(
-      { error: "title, content는 비어있을 수 없습니다." },
-      { status: 400 }
-    );
-  }
+  const { title, content } = parsed.data;
 
   const updated = await db
     .update(posts)

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { use, useEffect, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -15,6 +16,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { getPost, updatePost } from "@/services/posts";
+import { boardKeys, postDetailQuery } from "@/queries/board";
 
 export default function EditPostPage({
   params,
@@ -24,34 +26,38 @@ export default function EditPostPage({
   const { id } = use(params);
   const router = useRouter();
   const postId = Number(id);
+  const isValidId = Number.isInteger(postId) && postId > 0;
 
-  const [loading, setLoading] = useState(true);
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
+  const queryClient = useQueryClient();
 
   useEffect(() => {
-    if (!Number.isInteger(postId) || postId <= 0) {
-      router.replace("/posts");
-      return;
-    }
+    if (!isValidId) router.replace("/board");
+  }, [isValidId, router]);
 
-    (async () => {
-      try {
-        const data = await getPost(postId);
-        setTitle(data.title ?? "");
-        setContent(data.content ?? "");
-      } catch {
-        router.replace("/posts");
-      } finally {
-        setLoading(false);
-      }
-    })();
-  }, [postId, router]);
+  const { isLoading } = useQuery({
+    ...postDetailQuery(postId),
+    queryFn: async () => {
+      const data = await getPost(postId);
+      setTitle(data.title ?? "");
+      setContent(data.content ?? "");
+      return data;
+    },
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: () => updatePost(postId, { title, content }),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: boardKeys.posts() });
+      await queryClient.invalidateQueries({ queryKey: boardKeys.post(postId) });
+    },
+  });
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     try {
-      await updatePost(postId, { title, content });
+      await updateMutation.mutateAsync();
     } catch (e) {
       alert(e instanceof Error ? e.message : "수정에 실패했습니다.");
       return;
@@ -61,19 +67,15 @@ export default function EditPostPage({
     router.refresh();
   };
 
+  const loading = isLoading || updateMutation.isPending;
+
   return (
-    <div className="mx-auto w-full max-w-2xl p-6">
-      <div className="mb-4 flex items-center justify-between gap-3">
-        <Link
-          className="text-sm text-zinc-600 hover:underline dark:text-zinc-300"
-          href={`/board/${postId}`}
-        >
+    <div className={styles.container}>
+      <div className={styles.headerRow}>
+        <Link className={styles.link} href={`/board/${postId}`}>
           ← 상세로
         </Link>
-        <Link
-          className="text-sm text-zinc-600 hover:underline dark:text-zinc-300"
-          href="/board"
-        >
+        <Link className={styles.link} href="/board">
           목록
         </Link>
       </div>
@@ -84,9 +86,9 @@ export default function EditPostPage({
         </CardHeader>
 
         <form onSubmit={handleSubmit}>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <label className="text-sm font-medium">제목</label>
+          <CardContent className={styles.formContent}>
+            <div className={styles.field}>
+              <label className={styles.label}>제목</label>
               <Input
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
@@ -95,8 +97,8 @@ export default function EditPostPage({
               />
             </div>
 
-            <div className="space-y-2">
-              <label className="text-sm font-medium">내용</label>
+            <div className={styles.field}>
+              <label className={styles.label}>내용</label>
               <Textarea
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
@@ -107,7 +109,7 @@ export default function EditPostPage({
             </div>
           </CardContent>
 
-          <CardFooter className="justify-end gap-2">
+          <CardFooter className={styles.footer}>
             <Button
               type="button"
               variant="outline"
@@ -124,3 +126,13 @@ export default function EditPostPage({
     </div>
   );
 }
+
+const styles = {
+  container: "mx-auto w-full max-w-2xl p-6",
+  headerRow: "mb-4 flex items-center justify-between gap-3",
+  link: "text-sm text-zinc-600 hover:underline dark:text-zinc-300",
+  formContent: "space-y-4",
+  field: "space-y-2",
+  label: "text-sm font-medium",
+  footer: "justify-end gap-2",
+};

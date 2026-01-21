@@ -1,19 +1,29 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { Button } from "@/components/ui/button";
 import { deletePost } from "@/services/posts";
+import { boardKeys } from "@/queries/board";
 
-export function PostActions({ postId }: { postId: number }) {
+export function BoardActions({ postId }: { postId: number }) {
   const router = useRouter();
+  const queryClient = useQueryClient();
+
+  const deleteMutation = useMutation({
+    mutationFn: () => deletePost(postId),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: boardKeys.posts() });
+    },
+  });
 
   const handleDelete = async () => {
     const ok = window.confirm("정말 삭제할까요?");
     if (!ok) return;
 
     try {
-      await deletePost(postId);
+      await deleteMutation.mutateAsync();
     } catch (e) {
       alert(e instanceof Error ? e.message : "삭제에 실패했습니다.");
       return;
@@ -24,7 +34,7 @@ export function PostActions({ postId }: { postId: number }) {
   };
 
   return (
-    <div className="flex gap-2">
+    <div className={styles.container}>
       <Button
         variant="outline"
         onClick={() => router.push(`/board/${postId}/edit`)}
@@ -37,3 +47,7 @@ export function PostActions({ postId }: { postId: number }) {
     </div>
   );
 }
+
+const styles = {
+  container: "flex gap-2",
+};

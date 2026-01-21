@@ -43,7 +43,7 @@ npm run dev
 이 프로젝트는 **PostgreSQL**을 사용합니다.
 
 - **Schema**: `drizzle/schema.ts`
-- **DB 연결 설정**: `lib/db.ts`
+- **DB 연결 설정**: `src/lib/db.ts`
 
 #### DATABASE_URL
 
@@ -73,12 +73,11 @@ DATABASE_URL="postgres://postgres:postgres@localhost:5432/next_board"
 
 ### 라우트(페이지)
 
-- **홈**: `app/page.tsx`
-- **목록**: `app/posts/page.tsx`
-- **목록**: `app/board/page.tsx`
-- **작성**: `app/board/new/page.tsx`
-- **상세**: `app/board/[id]/page.tsx`
-- **수정**: `app/board/[id]/edit/page.tsx`
+- **홈**: `src/app/page.tsx`
+- **목록**: `src/app/board/page.tsx`
+- **작성**: `src/app/board/new/page.tsx`
+- **상세**: `src/app/board/[id]/page.tsx`
+- **수정**: `src/app/board/[id]/edit/page.tsx`
 
 ---
 
@@ -100,24 +99,29 @@ DATABASE_URL="postgres://postgres:postgres@localhost:5432/next_board"
 ### 프로젝트 구조(요약)
 
 ```text
-app/
-  api/posts/
-    route.ts
-    [id]/route.ts
-  board/
-    page.tsx
-    new/page.tsx
-    [id]/page.tsx
-    [id]/edit/page.tsx
-components/
-  ui/
-    button.tsx
-    card.tsx
-    input.tsx
-    textarea.tsx
-lib/
-  db.ts
-  utils.ts
-drizzle/
-  schema.ts
+src/
+  app/
+    api/board/
+      route.ts
+      [id]/route.ts
+    board/
+      page.tsx
+      new/page.tsx
+      [id]/page.tsx
+      [id]/edit/page.tsx
+  components/
+    ui/
+      button.tsx
+      card.tsx
+      input.tsx
+      textarea.tsx
+  lib/
+    db.ts
+    utils.ts
+    validators/
+  services/
+  types/
+  queries/
+  drizzle/
+    schema.ts
 ```
