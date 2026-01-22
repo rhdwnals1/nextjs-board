@@ -17,6 +17,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { getPost, updatePost } from "@/services/posts";
 import { boardKeys, postDetailQuery } from "@/queries/board";
+import { useAuth } from "@/hooks/useAuth";
 
 export default function EditPostPage({
   params,
@@ -31,6 +32,7 @@ export default function EditPostPage({
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const queryClient = useQueryClient();
+  const { isLoading: authLoading } = useAuth();
 
   useEffect(() => {
     if (!isValidId) router.replace("/board");
@@ -67,7 +69,15 @@ export default function EditPostPage({
     router.refresh();
   };
 
-  const loading = isLoading || updateMutation.isPending;
+  const loading = isLoading || updateMutation.isPending || authLoading;
+
+  if (authLoading) {
+    return (
+      <div className={styles.container}>
+        <div className={styles.loading}>로딩중...</div>
+      </div>
+    );
+  }
 
   return (
     <div className={styles.container}>
@@ -129,6 +139,7 @@ export default function EditPostPage({
 
 const styles = {
   container: "mx-auto w-full max-w-2xl p-6",
+  loading: "text-sm text-zinc-500 dark:text-zinc-400",
   headerRow: "mb-4 flex items-center justify-between gap-3",
   link: "text-sm text-zinc-600 hover:underline dark:text-zinc-300",
   formContent: "space-y-4",

@@ -6,8 +6,10 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { deletePost } from "@/services/posts";
 import { boardKeys } from "@/queries/board";
+import { useAuth } from "@/hooks/useAuth";
 
 export function BoardActions({ postId }: { postId: number }) {
+  const { isAuthenticated } = useAuth(false);
   const router = useRouter();
   const queryClient = useQueryClient();
 
@@ -32,6 +34,10 @@ export function BoardActions({ postId }: { postId: number }) {
     router.push("/board");
     router.refresh();
   };
+
+  if (!isAuthenticated) {
+    return null;
+  }
 
   return (
     <div className={styles.container}>

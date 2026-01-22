@@ -6,9 +6,19 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { postsListQuery } from "@/queries/board";
+import { useAuth } from "@/hooks/useAuth";
 
 export default function PostsPage() {
+  const { user, isLoading: authLoading } = useAuth();
   const { data: posts = [], isLoading, isError } = useQuery(postsListQuery());
+
+  if (authLoading) {
+    return (
+      <div className={styles.container}>
+        <div className={styles.loading}>로딩중...</div>
+      </div>
+    );
+  }
 
   return (
     <div className={styles.container}>

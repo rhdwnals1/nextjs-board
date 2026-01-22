@@ -3,9 +3,10 @@ import { NextResponse } from "next/server";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
 
-import { posts } from "@drizzle/schema";
+import { boards } from "@drizzle/schema";
 import { db } from "@/lib/db";
 import { isString } from "@/utils/common";
+import { getCurrentUser } from "@/lib/auth";
 
 export const runtime = "nodejs";
 
@@ -30,7 +31,7 @@ export async function GET(_request: Request, context: RouteContext) {
   }
 
   const post = (
-    await db.select().from(posts).where(eq(posts.id, postId)).limit(1)
+    await db.select().from(boards).where(eq(boards.id, postId)).limit(1)
   )[0];
 
   if (!post) {
@@ -44,6 +45,15 @@ export async function GET(_request: Request, context: RouteContext) {
 }
 
 export async function PUT(request: Request, context: RouteContext) {
+  const user = await getCurrentUser();
+  
+  if (!user) {
+    return NextResponse.json(
+      { error: "로그인이 필요합니다." },
+      { status: 401 }
+    );
+  }
+  
   const rawId = (await context.params).id;
   const postId = isString(rawId) ? Number(rawId) : NaN;
 
@@ -68,9 +78,9 @@ export async function PUT(request: Request, context: RouteContext) {
   const { title, content } = parsed.data;
 
   const updated = await db
-    .update(posts)
+    .update(boards)
     .set({ title, content })
-    .where(eq(posts.id, postId))
+    .where(eq(boards.id, postId))
     .returning();
 
   if (updated.length === 0) {
@@ -84,6 +94,15 @@ export async function PUT(request: Request, context: RouteContext) {
 }
 
 export async function DELETE(_request: Request, context: RouteContext) {
+  const user = await getCurrentUser();
+  
+  if (!user) {
+    return NextResponse.json(
+      { error: "로그인이 필요합니다." },
+      { status: 401 }
+    );
+  }
+  
   const rawId = (await context.params).id;
   const postId = isString(rawId) ? Number(rawId) : NaN;
 
@@ -95,9 +114,9 @@ export async function DELETE(_request: Request, context: RouteContext) {
   }
 
   const deleted = await db
-    .delete(posts)
-    .where(eq(posts.id, postId))
-    .returning({ id: posts.id });
+    .delete(boards)
+    .where(eq(boards.id, postId))
+    .returning({ id: boards.id });
 
   if (deleted.length === 0) {
     return NextResponse.json(

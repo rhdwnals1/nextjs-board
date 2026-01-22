@@ -17,8 +17,10 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { createPost } from "@/services/posts";
 import { boardKeys } from "@/queries/board";
+import { useAuth } from "@/hooks/useAuth";
 
 export default function NewPostPage() {
+  const { isLoading: authLoading } = useAuth();
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const router = useRouter();
@@ -43,6 +45,14 @@ export default function NewPostPage() {
     router.push("/board");
     router.refresh();
   };
+
+  if (authLoading) {
+    return (
+      <div className={styles.container}>
+        <div className={styles.loading}>로딩중...</div>
+      </div>
+    );
+  }
 
   return (
     <div className={styles.container}>
@@ -88,6 +98,7 @@ export default function NewPostPage() {
 
 const styles = {
   container: "mx-auto w-full max-w-2xl p-6",
+  loading: "text-sm text-zinc-500 dark:text-zinc-400",
   headerRow: "mb-4 flex items-center justify-between gap-3",
   title: "text-xl font-semibold",
   backLink: "text-sm text-zinc-600 hover:underline dark:text-zinc-300",

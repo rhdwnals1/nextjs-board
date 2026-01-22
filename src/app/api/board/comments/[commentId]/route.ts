@@ -5,6 +5,7 @@ import { eq } from "drizzle-orm";
 import { comments } from "@drizzle/schema";
 import { db } from "@/lib/db";
 import { isString } from "@/utils/common";
+import { getCurrentUser } from "@/lib/auth";
 
 export const runtime = "nodejs";
 
@@ -13,6 +14,15 @@ type RouteContext = {
 };
 
 export async function DELETE(_request: Request, context: RouteContext) {
+  const user = await getCurrentUser();
+  
+  if (!user) {
+    return NextResponse.json(
+      { error: "로그인이 필요합니다." },
+      { status: 401 }
+    );
+  }
+  
   const rawId = (await context.params).commentId;
   const id = isString(rawId) ? Number(rawId) : NaN;
   if (!Number.isInteger(id) || id <= 0) {

@@ -3,9 +3,10 @@ import { NextResponse } from "next/server";
 import { asc, eq } from "drizzle-orm";
 import { z } from "zod";
 
-import { comments, posts } from "@drizzle/schema";
+import { comments, boards } from "@drizzle/schema";
 import { db } from "@/lib/db";
 import { isString } from "@/utils/common";
+import { getCurrentUser } from "@/lib/auth";
 
 export const runtime = "nodejs";
 
@@ -30,13 +31,22 @@ export async function GET(_request: Request, context: RouteContext) {
   const rows = await db
     .select()
     .from(comments)
-    .where(eq(comments.postId, postId))
+    .where(eq(comments.boardId, postId))
     .orderBy(asc(comments.createdAt));
 
   return NextResponse.json(rows);
 }
 
 export async function POST(request: Request, context: RouteContext) {
+  const user = await getCurrentUser();
+  
+  if (!user) {
+    return NextResponse.json(
+      { error: "로그인이 필요합니다." },
+      { status: 401 }
+    );
+  }
+  
   const rawId = (await context.params).id;
   const postId = isString(rawId) ? Number(rawId) : NaN;
   if (!Number.isInteger(postId) || postId <= 0) {
@@ -60,9 +70,9 @@ export async function POST(request: Request, context: RouteContext) {
 
   const exists = (
     await db
-      .select({ id: posts.id })
-      .from(posts)
-      .where(eq(posts.id, postId))
+      .select({ id: boards.id })
+      .from(boards)
+      .where(eq(boards.id, postId))
       .limit(1)
   )[0];
   if (!exists) {
@@ -75,9 +85,9 @@ export async function POST(request: Request, context: RouteContext) {
   const created = await db
     .insert(comments)
     .values({
-      postId,
+      boardId: postId,
       content: parsed.data.content,
-      authorId: null,
+      authorId: user.id,
     })
     .returning();
 

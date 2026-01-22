@@ -10,12 +10,13 @@ import {
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   name: varchar("name", { length: 64 }).notNull(),
+  password: varchar("password", { length: 255 }).notNull(),
   createdAt: timestamp("created_at", { withTimezone: false })
     .notNull()
     .defaultNow(),
 });
 
-export const posts = pgTable("posts", {
+export const boards = pgTable("boards", {
   id: serial("id").primaryKey(),
   authorId: integer("author_id").references(() => users.id, {
     onDelete: "set null",
@@ -29,9 +30,9 @@ export const posts = pgTable("posts", {
 
 export const comments = pgTable("comments", {
   id: serial("id").primaryKey(),
-  postId: integer("post_id")
+  boardId: integer("board_id")
     .notNull()
-    .references(() => posts.id, { onDelete: "cascade" }),
+    .references(() => boards.id, { onDelete: "cascade" }),
   authorId: integer("author_id").references(() => users.id, {
     onDelete: "set null",
   }),
@@ -43,7 +44,7 @@ export const comments = pgTable("comments", {
 
 export type UserRow = typeof users.$inferSelect;
 export type NewUserRow = typeof users.$inferInsert;
-export type PostRow = typeof posts.$inferSelect;
-export type NewPostRow = typeof posts.$inferInsert;
+export type BoardRow = typeof boards.$inferSelect;
+export type NewBoardRow = typeof boards.$inferInsert;
 export type CommentRow = typeof comments.$inferSelect;
 export type NewCommentRow = typeof comments.$inferInsert;

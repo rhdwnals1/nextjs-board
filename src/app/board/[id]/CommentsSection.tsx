@@ -14,8 +14,10 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { commentsListQuery, boardKeys } from "@/queries/board";
 import { createComment, deleteComment } from "@/services/posts";
+import { useAuth } from "@/hooks/useAuth";
 
 export function CommentsSection({ postId }: { postId: number }) {
+  const { isAuthenticated } = useAuth(false);
   const queryClient = useQueryClient();
   const [content, setContent] = useState("");
 
@@ -86,33 +88,41 @@ export function CommentsSection({ postId }: { postId: number }) {
                 <span className={styles.itemDate}>
                   {new Date(c.createdAt).toLocaleString()}
                 </span>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => handleDelete(c.id)}
-                >
-                  삭제
-                </Button>
+                {isAuthenticated && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleDelete(c.id)}
+                  >
+                    삭제
+                  </Button>
+                )}
               </div>
               <p className={styles.itemText}>{c.content}</p>
             </div>
           ))}
         </div>
 
-        <div className={styles.form}>
-          <Textarea
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
-            placeholder="댓글을 입력하세요"
-            rows={3}
-            disabled={createMutation.isPending}
-          />
-          <div className={styles.formActions}>
-            <Button onClick={handleCreate} disabled={createMutation.isPending}>
-              댓글 작성
-            </Button>
+        {isAuthenticated ? (
+          <div className={styles.form}>
+            <Textarea
+              value={content}
+              onChange={(e) => setContent(e.target.value)}
+              placeholder="댓글을 입력하세요"
+              rows={3}
+              disabled={createMutation.isPending}
+            />
+            <div className={styles.formActions}>
+              <Button onClick={handleCreate} disabled={createMutation.isPending}>
+                댓글 작성
+              </Button>
+            </div>
           </div>
-        </div>
+        ) : (
+          <div className={styles.loginPrompt}>
+            <p className={styles.loginText}>댓글을 작성하려면 로그인이 필요합니다.</p>
+          </div>
+        )}
       </CardContent>
 
       <CardFooter className={styles.footer}>총 {comments.length}개</CardFooter>
@@ -133,5 +143,7 @@ const styles = {
   itemText: "mt-2 whitespace-pre-wrap text-sm text-zinc-800 dark:text-zinc-200",
   form: "space-y-2 pt-2",
   formActions: "flex justify-end",
+  loginPrompt: "pt-2",
+  loginText: "text-sm text-zinc-500 dark:text-zinc-400",
   footer: "justify-end text-xs text-zinc-500 dark:text-zinc-400",
 };

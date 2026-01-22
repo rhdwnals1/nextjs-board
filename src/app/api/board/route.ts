@@ -4,7 +4,8 @@ import { desc } from "drizzle-orm";
 import { z } from "zod";
 
 import { db } from "@/lib/db";
-import { posts } from "@drizzle/schema";
+import { boards } from "@drizzle/schema";
+import { getCurrentUser } from "@/lib/auth";
 
 export const runtime = "nodejs";
 
@@ -14,11 +15,20 @@ const boardUpsertSchema = z.object({
 });
 
 export async function GET() {
-  const rows = await db.select().from(posts).orderBy(desc(posts.createdAt));
+  const rows = await db.select().from(boards).orderBy(desc(boards.createdAt));
   return NextResponse.json(rows);
 }
 
 export async function POST(request: Request) {
+  const user = await getCurrentUser();
+  
+  if (!user) {
+    return NextResponse.json(
+      { error: "로그인이 필요합니다." },
+      { status: 401 }
+    );
+  }
+  
   const raw = (await request.json().catch(() => null)) as unknown;
   const parsed = boardUpsertSchema.safeParse(raw);
   if (!parsed.success) {
@@ -32,7 +42,14 @@ export async function POST(request: Request) {
   }
   const { title, content } = parsed.data;
 
-  const created = await db.insert(posts).values({ title, content }).returning();
+  const created = await db
+    .insert(boards)
+    .values({
+      title,
+      content,
+      authorId: user?.id ?? null,
+    })
+    .returning();
 
   return NextResponse.json(created[0], { status: 201 });
 }

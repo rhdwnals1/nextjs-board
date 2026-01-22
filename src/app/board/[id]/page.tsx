@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 
 import { eq } from "drizzle-orm";
 
@@ -13,13 +13,20 @@ import {
 import { BoardActions } from "./BoardActions";
 import { CommentsSection } from "./CommentsSection";
 import { db } from "@/lib/db";
-import { posts } from "@drizzle/schema";
+import { boards } from "@drizzle/schema";
+import { getCurrentUser } from "@/lib/auth";
 
 type PageProps = {
   params: Promise<{ id: string }>;
 };
 
 export default async function PostDetailPage({ params }: PageProps) {
+  const user = await getCurrentUser();
+  
+  if (!user) {
+    redirect("/auth/login");
+  }
+
   const { id } = await params;
   const postId = Number(id);
 
@@ -28,7 +35,7 @@ export default async function PostDetailPage({ params }: PageProps) {
   }
 
   const post = (
-    await db.select().from(posts).where(eq(posts.id, postId)).limit(1)
+    await db.select().from(boards).where(eq(boards.id, postId)).limit(1)
   )[0];
 
   if (!post) notFound();
