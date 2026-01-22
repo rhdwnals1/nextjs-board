@@ -3,7 +3,7 @@
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -20,10 +20,14 @@ export default function LoginPage() {
   const [name, setName] = useState("");
   const [password, setPassword] = useState("");
   const router = useRouter();
+  const queryClient = useQueryClient();
 
   const loginMutation = useMutation({
     mutationFn: () => login(name, password),
-    onSuccess: () => {
+    onSuccess: async (user) => {
+      // 인증 쿼리 캐시 업데이트
+      queryClient.setQueryData(["auth", "me"], user);
+      // 게시판으로 리다이렉트
       router.push("/board");
       router.refresh();
     },
