@@ -5,8 +5,8 @@ import { z } from "zod";
 
 import { comments, boards } from "@drizzle/schema";
 import { db } from "@/lib/db";
-import { isString } from "@/utils/common";
 import { getCurrentUser } from "@/lib/auth";
+import { validationError, unauthorizedError, notFoundError, parseId } from "@/utils/api";
 
 export const runtime = "nodejs";
 
@@ -19,14 +19,11 @@ type RouteContext = {
 };
 
 export async function GET(_request: Request, context: RouteContext) {
-  const rawId = (await context.params).id;
-  const postId = isString(rawId) ? Number(rawId) : NaN;
-  if (!Number.isInteger(postId) || postId <= 0) {
-    return NextResponse.json(
-      { error: "id는 양의 정수여야 합니다." },
-      { status: 400 }
-    );
+  const idResult = await parseId(context.params.then(p => p.id));
+  if ("error" in idResult) {
+    return idResult.error;
   }
+  const postId = idResult.id;
 
   const rows = await db
     .select()
@@ -41,31 +38,19 @@ export async function POST(request: Request, context: RouteContext) {
   const user = await getCurrentUser();
   
   if (!user) {
-    return NextResponse.json(
-      { error: "로그인이 필요합니다." },
-      { status: 401 }
-    );
+    return unauthorizedError();
   }
   
-  const rawId = (await context.params).id;
-  const postId = isString(rawId) ? Number(rawId) : NaN;
-  if (!Number.isInteger(postId) || postId <= 0) {
-    return NextResponse.json(
-      { error: "id는 양의 정수여야 합니다." },
-      { status: 400 }
-    );
+  const idResult = await parseId(context.params.then(p => p.id));
+  if ("error" in idResult) {
+    return idResult.error;
   }
+  const postId = idResult.id;
 
   const raw = (await request.json().catch(() => null)) as unknown;
   const parsed = commentCreateSchema.safeParse(raw);
   if (!parsed.success) {
-    return NextResponse.json(
-      {
-        error:
-          parsed.error.issues[0]?.message ?? "요청 값이 올바르지 않습니다.",
-      },
-      { status: 400 }
-    );
+    return validationError(parsed.error);
   }
 
   const exists = (
@@ -76,10 +61,7 @@ export async function POST(request: Request, context: RouteContext) {
       .limit(1)
   )[0];
   if (!exists) {
-    return NextResponse.json(
-      { error: "게시글을 찾을 수 없습니다." },
-      { status: 404 }
-    );
+    return notFoundError("게시글을 찾을 수 없습니다.");
   }
 
   const created = await db

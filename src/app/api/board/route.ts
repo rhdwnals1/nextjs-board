@@ -6,6 +6,7 @@ import { z } from "zod";
 import { db } from "@/lib/db";
 import { boards } from "@drizzle/schema";
 import { getCurrentUser } from "@/lib/auth";
+import { validationError, unauthorizedError } from "@/utils/api";
 
 export const runtime = "nodejs";
 
@@ -23,22 +24,13 @@ export async function POST(request: Request) {
   const user = await getCurrentUser();
   
   if (!user) {
-    return NextResponse.json(
-      { error: "로그인이 필요합니다." },
-      { status: 401 }
-    );
+    return unauthorizedError();
   }
   
   const raw = (await request.json().catch(() => null)) as unknown;
   const parsed = boardUpsertSchema.safeParse(raw);
   if (!parsed.success) {
-    return NextResponse.json(
-      {
-        error:
-          parsed.error.issues[0]?.message ?? "요청 값이 올바르지 않습니다.",
-      },
-      { status: 400 }
-    );
+    return validationError(parsed.error);
   }
   const { title, content } = parsed.data;
 

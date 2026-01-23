@@ -5,6 +5,7 @@ import bcrypt from "bcryptjs";
 import { db } from "@/lib/db";
 import { users } from "@drizzle/schema";
 import { setSession } from "@/lib/auth";
+import { validationError, badRequestError } from "@/utils/api";
 
 export const runtime = "nodejs";
 
@@ -18,12 +19,7 @@ export async function POST(request: Request) {
   const parsed = signupSchema.safeParse(raw);
   
   if (!parsed.success) {
-    return NextResponse.json(
-      {
-        error: parsed.error.issues[0]?.message ?? "요청 값이 올바르지 않습니다.",
-      },
-      { status: 400 }
-    );
+    return validationError(parsed.error);
   }
 
   const { name, password } = parsed.data;
@@ -34,10 +30,7 @@ export async function POST(request: Request) {
   )[0];
 
   if (existing) {
-    return NextResponse.json(
-      { error: "이미 사용 중인 이름입니다." },
-      { status: 400 }
-    );
+    return badRequestError("이미 사용 중인 이름입니다.");
   }
 
   // 비밀번호 해싱 (bcrypt 사용, 12 rounds)

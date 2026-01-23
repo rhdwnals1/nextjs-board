@@ -5,6 +5,7 @@ import bcrypt from "bcryptjs";
 import { db } from "@/lib/db";
 import { users } from "@drizzle/schema";
 import { setSession } from "@/lib/auth";
+import { validationError, unauthorizedError } from "@/utils/api";
 
 export const runtime = "nodejs";
 
@@ -18,12 +19,7 @@ export async function POST(request: Request) {
   const parsed = loginSchema.safeParse(raw);
   
   if (!parsed.success) {
-    return NextResponse.json(
-      {
-        error: parsed.error.issues[0]?.message ?? "요청 값이 올바르지 않습니다.",
-      },
-      { status: 400 }
-    );
+    return validationError(parsed.error);
   }
 
   const { name, password } = parsed.data;
@@ -33,19 +29,13 @@ export async function POST(request: Request) {
   )[0];
 
   if (!user) {
-    return NextResponse.json(
-      { error: "이름 또는 비밀번호가 올바르지 않습니다." },
-      { status: 401 }
-    );
+    return unauthorizedError("이름 또는 비밀번호가 올바르지 않습니다.");
   }
 
   // 해시된 비밀번호 비교
   const isPasswordValid = await bcrypt.compare(password, user.password);
   if (!isPasswordValid) {
-    return NextResponse.json(
-      { error: "이름 또는 비밀번호가 올바르지 않습니다." },
-      { status: 401 }
-    );
+    return unauthorizedError("이름 또는 비밀번호가 올바르지 않습니다.");
   }
 
   // 세션 설정
