@@ -32,9 +32,19 @@ export function notFoundError(
   return errorResponse(message, 404);
 }
 
-// 잘못된 요청 에러 (400)
+// 잘못된 요청 에러 (400) - 요청 형식 문제, validation 실패, 잘못된 파라미터
 export function badRequestError(message: string): NextResponse {
   return errorResponse(message, 400);
+}
+
+// 충돌 에러 (409) - 리소스 중복, 이미 존재하는 리소스
+export function conflictError(message: string): NextResponse {
+  return errorResponse(message, 409);
+}
+
+// 권한 없음 에러 (403) - 인증은 되었지만 권한이 없음
+export function forbiddenError(message: string = "권한이 없습니다."): NextResponse {
+  return errorResponse(message, 403);
 }
 
 // 문자열 ID를 숫자로 변환 및 검증
