@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
+import bcrypt from "bcryptjs";
 import { db } from "@/lib/db";
 import { users } from "@drizzle/schema";
 import { setSession } from "@/lib/auth";
@@ -39,8 +40,8 @@ export async function POST(request: Request) {
     );
   }
 
-  // 간단한 비밀번호 해싱 (실제로는 bcrypt 같은 라이브러리 사용 권장)
-  const hashedPassword = password; // TODO: 실제로는 해싱 필요
+  // 비밀번호 해싱 (bcrypt 사용)
+  const hashedPassword = await bcrypt.hash(password, 10);
 
   const created = await db
     .insert(users)

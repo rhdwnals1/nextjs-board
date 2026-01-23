@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
+import bcrypt from "bcryptjs";
 import { db } from "@/lib/db";
 import { users } from "@drizzle/schema";
 import { setSession } from "@/lib/auth";
@@ -38,8 +39,9 @@ export async function POST(request: Request) {
     );
   }
 
-  // 간단한 비밀번호 확인 (실제로는 해시 비교 필요)
-  if (user.password !== password) {
+  // 해시된 비밀번호 비교
+  const isPasswordValid = await bcrypt.compare(password, user.password);
+  if (!isPasswordValid) {
     return NextResponse.json(
       { error: "이름 또는 비밀번호가 올바르지 않습니다." },
       { status: 401 }
