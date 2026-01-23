@@ -40,8 +40,8 @@ export async function POST(request: Request) {
     );
   }
 
-  // 비밀번호 해싱 (bcrypt 사용)
-  const hashedPassword = await bcrypt.hash(password, 10);
+  // 비밀번호 해싱 (bcrypt 사용, 12 rounds)
+  const hashedPassword = await bcrypt.hash(password, 12);
 
   const created = await db
     .insert(users)
