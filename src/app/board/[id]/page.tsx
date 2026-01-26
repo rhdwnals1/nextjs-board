@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-
-import { eq } from "drizzle-orm";
+import { headers } from "next/headers";
 
 import {
   Card,
@@ -12,8 +11,6 @@ import {
 } from "@/components/ui/card";
 import { BoardActions } from "./BoardActions";
 import { CommentsSection } from "./CommentsSection";
-import { db } from "@/lib/db";
-import { boards } from "@drizzle/schema";
 import { getCurrentUser } from "@/lib/auth";
 
 type PageProps = {
@@ -34,11 +31,19 @@ export default async function PostDetailPage({ params }: PageProps) {
     notFound();
   }
 
-  const post = (
-    await db.select().from(boards).where(eq(boards.id, postId)).limit(1)
-  )[0];
+  // API 라우트 호출 (조회수 증가 포함)
+  const headersList = await headers();
+  const host = headersList.get("host") || "localhost:3000";
+  const protocol = process.env.NODE_ENV === "production" ? "https" : "http";
+  const response = await fetch(`${protocol}://${host}/api/board/${postId}`, {
+    cache: "no-store",
+  });
 
-  if (!post) notFound();
+  if (!response.ok) {
+    notFound();
+  }
+
+  const post = await response.json();
 
   return (
     <div className={styles.container}>
@@ -57,7 +62,10 @@ export default async function PostDetailPage({ params }: PageProps) {
           <p className={styles.content}>{post.content}</p>
         </CardContent>
         <CardFooter className={styles.footer}>
-          작성일: {new Date(post.createdAt).toLocaleString()}
+          <div className="flex gap-4 text-xs text-zinc-500 dark:text-zinc-400">
+            <span>조회수: {post.viewCount}</span>
+            <span>작성일: {new Date(post.createdAt).toLocaleString()}</span>
+          </div>
         </CardFooter>
       </Card>
 

@@ -23,6 +23,7 @@ export const boards = pgTable("boards", {
   }),
   title: text("title").notNull(),
   content: text("content").notNull(),
+  viewCount: integer("view_count").notNull().default(0), 
   createdAt: timestamp("created_at", { withTimezone: false })
     .notNull()
     .defaultNow(),

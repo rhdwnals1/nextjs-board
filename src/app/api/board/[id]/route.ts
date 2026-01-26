@@ -26,6 +26,7 @@ export async function GET(_request: Request, context: RouteContext) {
   }
   const postId = idResult.id;
 
+  // 게시글 조회
   const post = (
     await db.select().from(boards).where(eq(boards.id, postId)).limit(1)
   )[0];
@@ -34,7 +35,15 @@ export async function GET(_request: Request, context: RouteContext) {
     return notFoundError("게시글을 찾을 수 없습니다.");
   }
 
-  return NextResponse.json(post);
+  // 조회수 증가
+  const currentViewCount = post.viewCount ?? 0;
+  const updated = await db
+    .update(boards)
+    .set({ viewCount: currentViewCount + 1 })
+    .where(eq(boards.id, postId))
+    .returning();
+
+  return NextResponse.json(updated[0] ?? post);
 }
 
 export async function PUT(request: Request, context: RouteContext) {

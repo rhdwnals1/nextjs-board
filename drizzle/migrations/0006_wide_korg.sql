@@ -1,0 +1,1 @@
+ALTER TABLE "boards" ADD COLUMN "view_count" integer DEFAULT 0 NOT NULL;
