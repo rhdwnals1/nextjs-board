@@ -55,6 +55,20 @@ export const sessions = pgTable("sessions", {
     .defaultNow(),
 });
 
+// 게시글 좋아요 (사용자 ↔ 게시글 N:M 관계)
+export const boardLikes = pgTable("board_likes", {
+  id: serial("id").primaryKey(),
+  boardId: integer("board_id")
+    .notNull()
+    .references(() => boards.id, { onDelete: "cascade" }),
+  userId: integer("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  createdAt: timestamp("created_at", { withTimezone: false })
+    .notNull()
+    .defaultNow(),
+});
+
 export type UserRow = typeof users.$inferSelect;
 export type NewUserRow = typeof users.$inferInsert;
 export type BoardRow = typeof boards.$inferSelect;
@@ -63,3 +77,5 @@ export type CommentRow = typeof comments.$inferSelect;
 export type NewCommentRow = typeof comments.$inferInsert;
 export type SessionRow = typeof sessions.$inferSelect;
 export type NewSessionRow = typeof sessions.$inferInsert;
+export type BoardLikeRow = typeof boardLikes.$inferSelect;
+export type NewBoardLikeRow = typeof boardLikes.$inferInsert;

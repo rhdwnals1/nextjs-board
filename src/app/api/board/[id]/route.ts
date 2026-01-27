@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
 
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 import { z } from "zod";
 
-import { boards } from "@drizzle/schema";
+import { boards, boardLikes } from "@drizzle/schema";
 import { db } from "@/lib/db";
 import { getCurrentUser } from "@/lib/auth";
 import { validationError, unauthorizedError, notFoundError, parseId } from "@/utils/api";
@@ -43,7 +43,40 @@ export async function GET(_request: Request, context: RouteContext) {
     .where(eq(boards.id, postId))
     .returning();
 
-  return NextResponse.json(updated[0] ?? post);
+  const updatedPost = updated[0] ?? post;
+
+  // 좋아요 수 조회
+  const likeCountRows = await db
+    .select()
+    .from(boardLikes)
+    .where(eq(boardLikes.boardId, postId));
+  
+  const likeCount = likeCountRows.length;
+
+  // 현재 사용자가 좋아요를 눌렀는지 확인
+  const user = await getCurrentUser();
+  let userLiked = false;
+  if (user) {
+    const userLike = (
+      await db
+        .select()
+        .from(boardLikes)
+        .where(
+          and(
+            eq(boardLikes.boardId, postId),
+            eq(boardLikes.userId, user.id)
+          )
+        )
+        .limit(1)
+    )[0];
+    userLiked = !!userLike;
+  }
+
+  return NextResponse.json({
+    ...updatedPost,
+    likeCount,
+    userLiked,
+  });
 }
 
 export async function PUT(request: Request, context: RouteContext) {

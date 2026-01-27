@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/card";
 import { BoardActions } from "./BoardActions";
 import { CommentsSection } from "./CommentsSection";
+import { LikeButton } from "./LikeButton";
 import { getCurrentUser } from "@/lib/auth";
 
 type PageProps = {
@@ -35,8 +36,12 @@ export default async function PostDetailPage({ params }: PageProps) {
   const headersList = await headers();
   const host = headersList.get("host") || "localhost:3000";
   const protocol = process.env.NODE_ENV === "production" ? "https" : "http";
+  const cookieHeader = headersList.get("cookie") || "";
   const response = await fetch(`${protocol}://${host}/api/board/${postId}`, {
     cache: "no-store",
+    headers: {
+      cookie: cookieHeader,
+    },
   });
 
   if (!response.ok) {
@@ -62,9 +67,17 @@ export default async function PostDetailPage({ params }: PageProps) {
           <p className={styles.content}>{post.content}</p>
         </CardContent>
         <CardFooter className={styles.footer}>
-          <div className="flex gap-4 text-xs text-zinc-500 dark:text-zinc-400">
-            <span>조회수: {post.viewCount}</span>
-            <span>작성일: {new Date(post.createdAt).toLocaleString()}</span>
+          <div className={styles.footerContent}>
+            <LikeButton
+              key={`${post.id}-${post.likeCount}-${post.userLiked}`}
+              boardId={post.id}
+              initialLikeCount={post.likeCount ?? 0}
+              initialLiked={post.userLiked ?? false}
+            />
+            <div className={styles.metadata}>
+              <span>조회수: {post.viewCount}</span>
+              <span>작성일: {new Date(post.createdAt).toLocaleString()}</span>
+            </div>
           </div>
         </CardFooter>
       </Card>
@@ -80,4 +93,6 @@ const styles = {
   backLink: "text-sm text-zinc-600 hover:underline dark:text-zinc-300",
   content: "whitespace-pre-wrap leading-7 text-zinc-800 dark:text-zinc-200",
   footer: "justify-end text-xs text-zinc-500 dark:text-zinc-400",
+  footerContent: "flex items-center justify-between w-full",
+  metadata: "flex gap-4 text-xs text-zinc-500 dark:text-zinc-400",
 };

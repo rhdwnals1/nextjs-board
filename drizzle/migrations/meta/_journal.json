@@ -50,6 +50,13 @@
       "when": 1769416787281,
       "tag": "0006_wide_korg",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1769418876894,
+      "tag": "0007_overjoyed_vapor",
+      "breakpoints": true
     }
   ]
 }
