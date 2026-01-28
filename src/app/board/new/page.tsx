@@ -11,7 +11,6 @@ import {
   CardContent,
   CardFooter,
   CardHeader,
-  CardTitle,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -64,9 +63,7 @@ export default function NewPostPage() {
       </div>
 
       <Card>
-        <CardHeader>
-          <CardTitle>새 게시글</CardTitle>
-        </CardHeader>
+        <CardHeader />
         <form onSubmit={handleSubmit}>
           <CardContent className={styles.formContent}>
             <div className={styles.field}>

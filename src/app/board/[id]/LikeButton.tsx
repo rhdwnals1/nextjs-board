@@ -44,10 +44,15 @@ export function LikeButton({
       size="sm"
       onClick={() => likeMutation.mutate()}
       disabled={likeMutation.isPending}
-      className="gap-2"
+      className={styles.button}
     >
-      <Heart className={`h-4 w-4 ${liked ? "fill-current" : ""}`} />
+      <Heart className={styles.heart(liked)} />
       <span>{likeCount}</span>
     </Button>
   );
 }
+
+const styles = {
+  button: "gap-2",
+  heart: (liked: boolean) => `h-4 w-4 ${liked ? "fill-current" : ""}`,
+};
