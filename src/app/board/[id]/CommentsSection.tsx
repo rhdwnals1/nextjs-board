@@ -15,9 +15,16 @@ import { Textarea } from "@/components/ui/textarea";
 import { commentsListQuery, boardKeys } from "@/queries/board";
 import { createComment, deleteComment } from "@/services/posts";
 import { useAuth } from "@/hooks/useAuth";
+import { CommentLikeButton } from "./CommentLikeButton";
 
-export function CommentsSection({ postId }: { postId: number }) {
-  const { isAuthenticated } = useAuth(false);
+type CommentsSectionProps = {
+  postId: number;
+  currentUserId?: number;
+};
+
+export function CommentsSection({ postId, currentUserId }: CommentsSectionProps) {
+  const { isAuthenticated, user } = useAuth(false);
+  const userId = currentUserId ?? user?.id;
   const queryClient = useQueryClient();
   const [content, setContent] = useState("");
 
@@ -85,18 +92,36 @@ export function CommentsSection({ postId }: { postId: number }) {
           {comments.map((c) => (
             <div key={c.id} className={styles.item}>
               <div className={styles.itemMeta}>
-                <span className={styles.itemDate}>
-                  {new Date(c.createdAt).toLocaleString()}
-                </span>
-                {isAuthenticated && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleDelete(c.id)}
-                  >
-                    삭제
-                  </Button>
-                )}
+                <div className={styles.itemInfo}>
+                  {c.authorName && (
+                    <span className={styles.itemAuthor}>{c.authorName}</span>
+                  )}
+                  <span className={styles.itemDate}>
+                    {new Date(c.createdAt).toLocaleString()}
+                  </span>
+                </div>
+                <div className={styles.itemActions}>
+                  {isAuthenticated && (
+                    <>
+                      <CommentLikeButton
+                        key={`${c.id}-${c.likeCount}-${c.userLiked}`}
+                        commentId={c.id}
+                        postId={postId}
+                        initialLikeCount={c.likeCount ?? 0}
+                        initialLiked={c.userLiked ?? false}
+                      />
+                      {c.authorId === userId && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleDelete(c.id)}
+                        >
+                          삭제
+                        </Button>
+                      )}
+                    </>
+                  )}
+                </div>
               </div>
               <p className={styles.itemText}>{c.content}</p>
             </div>
@@ -139,7 +164,10 @@ const styles = {
   list: "space-y-3",
   item: "rounded-md border border-zinc-200 p-3 dark:border-zinc-800",
   itemMeta: "flex items-center justify-between gap-3",
+  itemInfo: "flex items-center gap-2",
+  itemAuthor: "text-xs font-medium text-zinc-700 dark:text-zinc-300",
   itemDate: "text-xs text-zinc-500 dark:text-zinc-400",
+  itemActions: "flex items-center gap-2",
   itemText: "mt-2 whitespace-pre-wrap text-sm text-zinc-800 dark:text-zinc-200",
   form: "space-y-2 pt-2",
   formActions: "flex justify-end",

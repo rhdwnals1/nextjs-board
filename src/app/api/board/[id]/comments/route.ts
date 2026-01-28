@@ -1,12 +1,13 @@
 import { NextResponse } from "next/server";
 
-import { asc, eq } from "drizzle-orm";
+import { asc, eq, and } from "drizzle-orm";
 import { z } from "zod";
 
-import { comments, boards } from "@drizzle/schema";
+import { comments, boards, commentLikes, users } from "@drizzle/schema";
 import { db } from "@/lib/db";
 import { getCurrentUser } from "@/lib/auth";
 import { validationError, unauthorizedError, notFoundError, parseId } from "@/utils/api";
+import { createNotification } from "@/lib/notifications";
 
 export const runtime = "nodejs";
 
@@ -25,13 +26,57 @@ export async function GET(_request: Request, context: RouteContext) {
   }
   const postId = idResult.id;
 
-  const rows = await db
-    .select()
+  const user = await getCurrentUser();
+  const commentRows = await db
+    .select({
+      id: comments.id,
+      boardId: comments.boardId,
+      authorId: comments.authorId,
+      content: comments.content,
+      createdAt: comments.createdAt,
+      authorName: users.name,
+    })
     .from(comments)
+    .leftJoin(users, eq(comments.authorId, users.id))
     .where(eq(comments.boardId, postId))
     .orderBy(asc(comments.createdAt));
 
-  return NextResponse.json(rows);
+  // 각 댓글의 좋아요 수와 사용자 좋아요 상태 조회
+  const commentsWithLikes = await Promise.all(
+    commentRows.map(async (comment) => {
+      const likeCountRows = await db
+        .select()
+        .from(commentLikes)
+        .where(eq(commentLikes.commentId, comment.id));
+      
+      const likeCount = likeCountRows.length;
+
+      let userLiked = false;
+      if (user) {
+        const userLike = (
+          await db
+            .select()
+            .from(commentLikes)
+            .where(
+              and(
+                eq(commentLikes.commentId, comment.id),
+                eq(commentLikes.userId, user.id)
+              )
+            )
+            .limit(1)
+        )[0];
+        userLiked = !!userLike;
+      }
+
+      return {
+        ...comment,
+        likeCount,
+        userLiked,
+      };
+    })
+  );
+
+  return NextResponse.json(commentsWithLikes);
 }
 
 export async function POST(request: Request, context: RouteContext) {
@@ -72,6 +117,9 @@ export async function POST(request: Request, context: RouteContext) {
       authorId: user.id,
     })
     .returning();
+
+  // 알림 생성 (내 게시글에 댓글이 달렸을 때)
+  await createNotification("board_comment", user.id, postId, created[0].id);
 
   return NextResponse.json(created[0], { status: 201 });
 }
