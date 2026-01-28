@@ -6,6 +6,7 @@ import { boards, boardLikes } from "@drizzle/schema";
 import { db } from "@/lib/db";
 import { getCurrentUser } from "@/lib/auth";
 import { unauthorizedError, notFoundError, parseId } from "@/utils/api";
+import { createNotification } from "@/lib/notifications";
 
 export const runtime = "nodejs";
 
@@ -63,6 +64,9 @@ export async function POST(_request: Request, context: RouteContext) {
       boardId,
       userId: user.id,
     });
+
+    // 알림 생성 (내 게시글에 좋아요가 눌렸을 때만)
+    await createNotification("board_like", user.id, boardId);
 
     return NextResponse.json({ liked: true });
   }
