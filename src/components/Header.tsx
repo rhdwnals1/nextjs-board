@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { AuthButton } from "./AuthButton";
+import { NotificationButton } from "./NotificationButton";
 
 export function Header() {
   return (
@@ -10,7 +11,10 @@ export function Header() {
         <Link href="/" className={styles.title}>
           게시판
         </Link>
-        <AuthButton />
+        <div className={styles.actions}>
+          <NotificationButton />
+          <AuthButton />
+        </div>
       </div>
     </header>
   );
@@ -22,4 +26,5 @@ const styles = {
   content:
     "mx-auto w-full max-w-7xl flex items-center justify-between gap-4 px-4 py-3",
   title: "text-lg font-semibold text-zinc-900 dark:text-zinc-50 hover:opacity-80 transition-opacity",
+  actions: "flex items-center gap-2",
 };
