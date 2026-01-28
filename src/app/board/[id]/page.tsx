@@ -56,12 +56,15 @@ export default async function PostDetailPage({ params }: PageProps) {
         <Link className={styles.backLink} href="/board">
           ← 목록
         </Link>
-        <BoardActions postId={post.id} />
+        <BoardActions postId={post.id} authorId={post.authorId} currentUserId={user.id} />
       </div>
 
       <Card>
         <CardHeader>
           <CardTitle>{post.title}</CardTitle>
+          {post.authorName && (
+            <p className={styles.author}>작성자: {post.authorName}</p>
+          )}
         </CardHeader>
         <CardContent>
           <p className={styles.content}>{post.content}</p>
@@ -82,7 +85,7 @@ export default async function PostDetailPage({ params }: PageProps) {
         </CardFooter>
       </Card>
 
-      <CommentsSection postId={post.id} />
+      <CommentsSection postId={post.id} currentUserId={user.id} />
     </div>
   );
 }
@@ -91,6 +94,7 @@ const styles = {
   container: "mx-auto w-full max-w-2xl p-6 space-y-4",
   headerRow: "flex items-center justify-between gap-3",
   backLink: "text-sm text-zinc-600 hover:underline dark:text-zinc-300",
+  author: "text-sm text-zinc-600 dark:text-zinc-400 mt-1",
   content: "whitespace-pre-wrap leading-7 text-zinc-800 dark:text-zinc-200",
   footer: "justify-end text-xs text-zinc-500 dark:text-zinc-400",
   footerContent: "flex items-center justify-between w-full",

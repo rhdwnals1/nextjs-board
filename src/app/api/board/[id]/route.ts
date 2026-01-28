@@ -3,10 +3,10 @@ import { NextResponse } from "next/server";
 import { eq, and } from "drizzle-orm";
 import { z } from "zod";
 
-import { boards, boardLikes } from "@drizzle/schema";
+import { boards, boardLikes, users } from "@drizzle/schema";
 import { db } from "@/lib/db";
 import { getCurrentUser } from "@/lib/auth";
-import { validationError, unauthorizedError, notFoundError, parseId } from "@/utils/api";
+import { validationError, unauthorizedError, notFoundError, forbiddenError, parseId } from "@/utils/api";
 
 export const runtime = "nodejs";
 
@@ -26,14 +26,36 @@ export async function GET(_request: Request, context: RouteContext) {
   }
   const postId = idResult.id;
 
-  // 게시글 조회
-  const post = (
-    await db.select().from(boards).where(eq(boards.id, postId)).limit(1)
+  // 게시글 조회 
+  const postWithAuthor = (
+    await db
+      .select({
+        id: boards.id,
+        authorId: boards.authorId,
+        title: boards.title,
+        content: boards.content,
+        viewCount: boards.viewCount,
+        createdAt: boards.createdAt,
+        authorName: users.name,
+      })
+      .from(boards)
+      .leftJoin(users, eq(boards.authorId, users.id))
+      .where(eq(boards.id, postId))
+      .limit(1)
   )[0];
 
-  if (!post) {
+  if (!postWithAuthor) {
     return notFoundError("게시글을 찾을 수 없습니다.");
   }
+
+  const post = {
+    id: postWithAuthor.id,
+    authorId: postWithAuthor.authorId,
+    title: postWithAuthor.title,
+    content: postWithAuthor.content,
+    viewCount: postWithAuthor.viewCount,
+    createdAt: postWithAuthor.createdAt,
+  };
 
   // 조회수 증가
   const currentViewCount = post.viewCount ?? 0;
@@ -74,6 +96,7 @@ export async function GET(_request: Request, context: RouteContext) {
 
   return NextResponse.json({
     ...updatedPost,
+    authorName: postWithAuthor.authorName,
     likeCount,
     userLiked,
   });
@@ -99,15 +122,24 @@ export async function PUT(request: Request, context: RouteContext) {
   }
   const { title, content } = parsed.data;
 
+  // 게시글 존재 및 작성자 확인
+  const board = (
+    await db.select().from(boards).where(eq(boards.id, postId)).limit(1)
+  )[0];
+
+  if (!board) {
+    return notFoundError("게시글을 찾을 수 없습니다.");
+  }
+
+  if (board.authorId !== user.id) {
+    return forbiddenError("본인이 작성한 게시글만 수정할 수 있습니다.");
+  }
+
   const updated = await db
     .update(boards)
     .set({ title, content })
     .where(eq(boards.id, postId))
     .returning();
-
-  if (updated.length === 0) {
-    return notFoundError("게시글을 찾을 수 없습니다.");
-  }
 
   return NextResponse.json(updated[0]);
 }
@@ -125,14 +157,19 @@ export async function DELETE(_request: Request, context: RouteContext) {
   }
   const postId = idResult.id;
 
-  const deleted = await db
-    .delete(boards)
-    .where(eq(boards.id, postId))
-    .returning({ id: boards.id });
+  // 게시글 존재 및 작성자 확인
+  const board = (
+    await db.select().from(boards).where(eq(boards.id, postId)).limit(1)
+  )[0];
 
-  if (deleted.length === 0) {
+  if (!board) {
     return notFoundError("게시글을 찾을 수 없습니다.");
   }
+
+  if (board.authorId !== user.id) {
+    return forbiddenError("본인이 작성한 게시글만 삭제할 수 있습니다.");
+  }
+
 
   return NextResponse.json({ ok: true });
 }
