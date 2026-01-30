@@ -1,4 +1,3 @@
-import { NextResponse } from "next/server";
 import { eq, desc } from "drizzle-orm";
 import { notifications } from "@drizzle/schema";
 import { db } from "@/lib/db";
@@ -6,6 +5,11 @@ import { getCurrentUser } from "@/lib/auth";
 import { unauthorizedError } from "@/utils/api";
 
 export const runtime = "nodejs";
+
+type StreamData = {
+  type: "initial" | "update";
+  notifications: typeof notifications.$inferSelect[];
+};
 
 // SSE 알림 스트림
 export async function GET(request: Request) {
@@ -20,7 +24,7 @@ export async function GET(request: Request) {
       const encoder = new TextEncoder();
       
       // SSE 형식으로 데이터 전송
-      const send = (data: any) => {
+      const send = (data: StreamData) => {
         const message = `data: ${JSON.stringify(data)}\n\n`;
         controller.enqueue(encoder.encode(message));
       };
